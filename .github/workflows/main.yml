@@ -1,0 +1,55 @@
+name: Build Flet APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 下载代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. 配置 Java 环境 (Android 打包必须)
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3. 配置 Flutter 环境 (Flet 依赖 Flutter)
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      # 4. 配置 Python 环境
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 5. 安装依赖
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          # 确保安装最新版 flet 命令行工具
+          pip install flet 
+
+      # 6. 开始打包 APK
+      - name: Flet Build APK
+        run: |
+          # flet build apk 会自动把 Python 环境和代码打包进去
+          flet build apk --verbose
+
+      # 7. 上传打包好的 APK 供下载
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: weather-app
+          # Flet 打包默认输出路径在 build/apk/ 目录下
+          path: build/apk/*.apk
